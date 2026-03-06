@@ -1,0 +1,44 @@
+name: Paid Channel Analyzer
+
+on:
+  schedule:
+    # 8:00 AM PST weekdays (UTC 16:00)
+    - cron: '0 16 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      custom_from:
+        description: 'Custom date range start (YYYY-MM-DD) — leave empty for standard run'
+        required: false
+      custom_to:
+        description: 'Custom date range end (YYYY-MM-DD) — leave empty for standard run'
+        required: false
+
+jobs:
+  run-analyzer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Paid Channel Analyzer
+        env:
+          WINDSOR_API_KEY: ${{ secrets.WINDSOR_API_KEY }}
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          GITHUB_TOKEN: ${{ secrets.DASHBOARD_GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ secrets.DASH_GITHUB_OWNER }}
+          GITHUB_REPO: ${{ secrets.DASH_GITHUB_REPO }}
+        run: node channel_report.js
