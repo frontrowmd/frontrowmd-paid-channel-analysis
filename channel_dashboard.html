@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="FrontrowMD_Favicon.png">
+<title>FrontrowMD — Paid Channel Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--midnight:#020F18;--deep-navy:#172C45;--mid-navy:#1D4053;--soft-teal:#72A4BF;--white:#FFFFFF;--card-bg:rgba(114,164,191,0.08);--card-border:#D4E6EF;--teal-10:rgba(114,164,191,0.10);--grad-dark:linear-gradient(135deg,#020F18 0%,#1D4053 50%,#72A4BF 100%);--grad-light:linear-gradient(135deg,#F5F7FA 0%,#EBF3F8 60%,#D8ECF5 100%);--shadow-sm:0 2px 12px rgba(23,44,69,0.06);--shadow-md:0 4px 16px rgba(2,15,24,0.12);--shadow-hov:0 8px 24px rgba(23,44,69,0.12);--warn-bg:#FFF8E1;--warn-tx:#B8860B;--good-bg:rgba(26,107,58,0.08);--good-tx:#1A6B3A;--danger-bg:rgba(192,57,43,0.07);--danger-tx:#C0392B;--up:#1A6B3A;--up-bg:rgba(26,107,58,0.10);--down:#C0392B;--down-bg:rgba(192,57,43,0.09);--flat:#5a7a8a;--flat-bg:rgba(90,122,138,0.09);--radius:14px;--pill:50px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--grad-light);color:var(--midnight);font-family:'Libre Baskerville',Georgia,serif;font-size:14px;line-height:1.65;min-height:100vh;}
+.wrap{max-width:1360px;margin:0 auto;padding:0 40px 80px;position:relative;z-index:1;}
+header{background:var(--grad-dark);margin:0 0 48px;padding:36px 48px 32px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;width:100%;}
+header::after{content:'';position:absolute;right:0;top:0;bottom:0;width:340px;background:radial-gradient(ellipse at right center,rgba(114,164,191,0.12) 0%,transparent 70%);pointer-events:none;}
+.logo-img{height:40px;width:auto;display:block;}
+h1{font-size:clamp(22px,2.8vw,34px);font-weight:700;color:var(--white);line-height:1.2;margin-top:14px;}
+h1 em{font-style:normal;color:var(--soft-teal);}
+.header-right{text-align:right;position:relative;z-index:1;flex-shrink:0;}
+.gen-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:4px;}
+.gen-time{font-size:14px;color:rgba(255,255,255,0.85);}
+
+/* MAIN TABS */
+.tabs{display:flex;gap:6px;margin-bottom:36px;flex-wrap:wrap;}
+.tab{font-family:'Libre Baskerville',Georgia,serif;font-size:13px;padding:10px 26px;border-radius:20px;cursor:pointer;border:1.5px solid var(--card-border);background:transparent;color:var(--mid-navy);transition:all 0.2s ease;display:inline-flex;align-items:center;gap:8px;line-height:1.3;}
+.tab:hover{border-color:var(--soft-teal);background:var(--teal-10);}
+.tab.active{background:var(--deep-navy);color:var(--white);border-color:var(--deep-navy);font-weight:700;}
+.tab-icon{font-size:16px;}
+
+/* SUB TABS (time windows) */
+.sub-tabs{display:flex;gap:4px;margin-bottom:28px;}
+.sub-tab{font-family:'Libre Baskerville',Georgia,serif;font-size:11px;padding:7px 18px;border-radius:var(--pill);cursor:pointer;border:1px solid var(--card-border);background:transparent;color:var(--mid-navy);transition:all 0.2s ease;}
+.sub-tab:hover{border-color:var(--soft-teal);background:var(--teal-10);}
+.sub-tab.active{background:var(--soft-teal);color:var(--white);border-color:var(--soft-teal);font-weight:700;}
+
+/* PANELS */
+.panel{display:none;}.panel.active{display:block;animation:fadeUp 0.3s ease;}
+.sub-panel{display:none;}.sub-panel.active{display:block;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* SECTION LABEL */
+.sl{font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--soft-teal);margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+.sl::after{content:'';flex:1;height:1px;background:var(--card-border);}
+
+/* DELTA BADGES */
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--pill);margin-top:6px;}
+.delta-up{background:var(--up-bg);color:var(--up);}
+.delta-down{background:var(--down-bg);color:var(--down);}
+.delta-flat{background:var(--flat-bg);color:var(--flat);}
+
+/* DARK STAT CARDS (KPI row) */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px;}
+.stat-card{background:linear-gradient(135deg,var(--deep-navy),var(--mid-navy));border-radius:var(--radius);padding:24px 28px;color:var(--white);box-shadow:var(--shadow-md);position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;right:-10px;bottom:-10px;width:80px;height:80px;border-radius:50%;background:rgba(114,164,191,0.08);}
+.sc-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(114,164,191,0.75);margin-bottom:8px;}
+.sc-value{font-size:32px;font-weight:700;line-height:1;}
+.sc-sub{font-size:12px;color:rgba(255,255,255,0.45);margin-top:6px;font-style:italic;}
+.sc-delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--pill);margin-top:8px;}
+.sc-delta-up{background:rgba(26,107,58,0.25);color:#7ecda0;}
+.sc-delta-down{background:rgba(192,57,43,0.25);color:#f09090;}
+.sc-delta-flat{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);}
+
+/* LIGHT KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:32px;}
+.kpi{background:var(--white);border:1px solid var(--card-border);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform 0.2s ease,box-shadow 0.2s ease;}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-hov);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-stripe,var(--soft-teal));}
+.kpi-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft-teal);margin-bottom:10px;}
+.kpi-value{font-size:28px;font-weight:700;color:var(--deep-navy);line-height:1;}
+.kpi-sub{font-size:11px;color:#8a9aaa;margin-top:6px;font-style:italic;}
+.kpi-navy{--kpi-stripe:var(--deep-navy);}
+.kpi-good{--kpi-stripe:#2E7D52;}
+.kpi-warn{--kpi-stripe:#B8860B;}
+.kpi-danger{--kpi-stripe:#C0392B;}
+
+/* CHART CARDS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px;}
+.chart-card{background:var(--white);border:1px solid var(--card-border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-sm);transition:transform 0.2s ease,box-shadow 0.2s ease;}
+.chart-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hov);}
+.chart-card.full{grid-column:1/-1;}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--soft-teal);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;}
+.chart-title-meta{font-size:11px;letter-spacing:0.04em;color:#8a9aaa;font-weight:400;text-transform:none;}
+
+/* DATA TABLE */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--soft-teal);text-align:left;padding:0 12px 12px 0;border-bottom:2px solid var(--card-border);}
+.data-table th:not(:first-child){text-align:right;padding-left:12px;}
+.data-table td{padding:10px 12px 10px 0;border-bottom:1px solid rgba(212,230,239,0.5);font-size:13px;vertical-align:top;color:var(--mid-navy);}
+.data-table td:not(:first-child){text-align:right;font-weight:700;color:var(--deep-navy);padding-left:12px;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(114,164,191,0.04);}
+
+/* CREATIVE QUALITY MATRIX */
+.cq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:32px;}
+.cq-card{background:var(--white);border:1px solid var(--card-border);border-radius:12px;padding:20px;box-shadow:var(--shadow-sm);transition:all 0.2s ease;}
+.cq-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hov);}
+.cq-name{font-size:13px;font-weight:700;color:var(--deep-navy);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cq-camp{font-size:10px;color:#8a9aaa;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cq-bar-wrap{display:flex;height:24px;border-radius:6px;overflow:hidden;margin-bottom:10px;}
+.cq-bar{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;min-width:2px;transition:width 0.6s ease;}
+.cq-bar-qual{background:#2E7D52;}
+.cq-bar-nq{background:#C0392B;}
+.cq-bar-te{background:#E65100;}
+.cq-bar-other{background:#8a9aaa;}
+.cq-legend{display:flex;gap:14px;font-size:11px;color:var(--mid-navy);}
+.cq-legend span{display:inline-flex;align-items:center;gap:4px;}
+.cq-legend .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cq-spend{font-size:11px;color:#8a9aaa;margin-top:8px;}
+
+/* CHANNEL CARDS (overview) */
+.ch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:32px;}
+.ch-card{background:var(--white);border:1px solid var(--card-border);border-radius:12px;padding:20px;box-shadow:var(--shadow-sm);transition:all 0.2s ease;cursor:pointer;}
+.ch-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hov);}
+.ch-card-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.ch-card-icon{font-size:18px;}
+.ch-card-name{font-size:14px;font-weight:700;color:var(--deep-navy);}
+.ch-card-spend{font-size:20px;font-weight:700;color:var(--deep-navy);margin-bottom:4px;}
+.ch-card-rows{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);}
+.ch-card-row{display:flex;justify-content:space-between;font-size:11px;}
+.ch-card-row-label{color:#8a9aaa;text-transform:uppercase;letter-spacing:0.06em;}
+.ch-card-row-val{font-weight:700;color:var(--deep-navy);}
+.ch-best{color:var(--up);font-weight:700;}
+.ch-worst{color:var(--down);font-weight:700;}
+
+/* INTELLIGENCE REPORT */
+.intel-section{margin-bottom:32px;}
+.intel-cat{margin-bottom:20px;}
+.intel-cat-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:8px 16px;border-radius:8px;margin-bottom:12px;display:inline-block;}
+.intel-alert .intel-cat-title{background:var(--danger-bg);color:var(--danger-tx);}
+.intel-weakness .intel-cat-title{background:var(--warn-bg);color:var(--warn-tx);}
+.intel-opportunity .intel-cat-title{background:rgba(25,118,210,0.08);color:#1976D2;}
+.intel-win .intel-cat-title{background:var(--good-bg);color:var(--good-tx);}
+.intel-item{background:var(--white);border:1px solid var(--card-border);border-radius:10px;padding:16px 20px;margin-bottom:8px;box-shadow:var(--shadow-sm);}
+.intel-item-title{font-size:13px;font-weight:700;color:var(--deep-navy);margin-bottom:4px;}
+.intel-item-desc{font-size:12px;color:var(--mid-navy);margin-bottom:4px;}
+.intel-item-action{font-size:12px;color:var(--soft-teal);font-style:italic;}
+
+/* PACING BAR */
+.pacing-bar-wrap{margin-top:12px;}
+.pacing-bar-track{height:10px;background:var(--card-bg);border-radius:5px;position:relative;overflow:hidden;}
+.pacing-bar-fill{height:100%;border-radius:5px;transition:width 0.8s ease;}
+.pacing-bar-marker{position:absolute;top:-2px;width:2px;height:14px;background:var(--deep-navy);border-radius:1px;}
+.pacing-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:#8a9aaa;margin-top:4px;}
+
+/* FOOTER */
+footer{text-align:center;padding:32px 0;font-size:11px;color:#8a9aaa;}
+footer a{color:var(--soft-teal);text-decoration:none;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .stat-row,.kpi-grid,.ch-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row{grid-template-columns:1fr;}
+  .cq-grid{grid-template-columns:1fr;}
+  header{flex-direction:column;align-items:flex-start;gap:16px;}
+}
+@media(max-width:600px){
+  .stat-row,.kpi-grid,.ch-grid{grid-template-columns:1fr;}
+  .wrap{padding:0 16px 40px;}
+  .tabs,.sub-tabs{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <img src="White_Graphic_Logo.png" alt="FrontrowMD" class="logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+    <div class="logo-fallback" style="display:none"><strong>frontrow</strong>MD</div>
+    <h1>Paid Channel <em>Analyzer</em></h1>
+  </div>
+  <div class="header-right">
+    <div class="gen-label">Generated</div>
+    <div class="gen-time" id="gen-time"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Main channel tabs -->
+  <div class="tabs" id="main-tabs"></div>
+
+  <!-- Tab panels rendered by JS -->
+  <div id="panels"></div>
+</div>
+
+<footer>
+  <img src="FrontrowMD_Navy_Blue_Logo.png" alt="FrontrowMD" style="height:24px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;" onerror="this.style.display='none';">
+  Powered by FrontrowMD Marketing Operations
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA INJECTION — replaced by channel_report.js at build time
+// ══════════════════════════════════════════════════════════════════════════════
+const RAW = "__DASHBOARD_DATA__";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmt$ = n => '$' + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmtN = n => Math.round(Number(n)).toLocaleString();
+const fmtP = (a,b) => b > 0 ? ((a/b)*100).toFixed(1)+'%' : '—';
+const fmtPct = n => n !== null && n !== undefined ? (n*100).toFixed(2)+'%' : '—';
+const cpdStr = (s,d) => d > 0 ? fmt$(s/d) : '—';
+const CH_KEYS = ['meta','google','linkedin','tiktok','youtube'];
+const CH_LABELS = {meta:'Meta',google:'Google Ads',linkedin:'LinkedIn',tiktok:'TikTok',youtube:'YouTube'};
+const CH_ICONS = {meta:'\ud83d\udcd8',google:'\ud83d\udd0d',linkedin:'\ud83d\udcbc',tiktok:'\ud83c\udfb5',youtube:'\u25b6\ufe0f'};
+const WIN_KEYS = ['yesterday','rolling7','mtd','lastmonth','ytd'];
+const WIN_LABELS = {yesterday:'Yesterday',rolling7:'Last 7 Days',mtd:'Month to Date',lastmonth:'Last Month',ytd:'Year to Date'};
+
+function deltaBadge(curr, prev, opts={}) {
+  if (prev === null || prev === undefined || prev === 0) return '';
+  const d = ((curr - prev) / Math.abs(prev)) * 100;
+  const pct = Math.abs(d).toFixed(1);
+  const inv = opts.invert;
+  const isUp = d > 2, isDown = d < -2;
+  let cls, arrow;
+  if (isUp)        { cls = inv ? 'delta-down' : 'delta-up';   arrow = '\u25b2'; }
+  else if (isDown) { cls = inv ? 'delta-up'   : 'delta-down'; arrow = '\u25bc'; }
+  else             { cls = 'delta-flat'; arrow = '\u2014'; }
+  const sign = d > 0 ? '+' : '';
+  return `<span class="delta ${cls}">${arrow} ${sign}${pct}%</span>`;
+}
+
+function scDelta(curr, prev, opts={}) {
+  if (prev === null || prev === undefined || prev === 0) return '';
+  const d = ((curr - prev) / Math.abs(prev)) * 100;
+  const pct = Math.abs(d).toFixed(1);
+  const inv = opts.invert;
+  const isUp = d > 2, isDown = d < -2;
+  let cls, arrow;
+  if (isUp)        { cls = inv ? 'sc-delta-down' : 'sc-delta-up';   arrow = '\u25b2'; }
+  else if (isDown) { cls = inv ? 'sc-delta-up'   : 'sc-delta-down'; arrow = '\u25bc'; }
+  else             { cls = 'sc-delta-flat'; arrow = '\u2014'; }
+  const sign = d > 0 ? '+' : '';
+  return `<span class="sc-delta ${cls}">${arrow} ${sign}${pct}%</span>`;
+}
+
+// ── Intelligence Engine (per-channel) ────────────────────────────────────────
+function buildChannelIntelligence(chKey, windsor, prevWindsor, hubspot, prevHubspot) {
+  const F = {alerts:[],weaknesses:[],opportunities:[],wins:[]};
+  const ch = windsor.channels[chKey];
+  const pch = prevWindsor.channels[chKey];
+  const attr = hubspot.attribution.byChannel[chKey];
+  const pAttr = prevHubspot?.attribution?.byChannel?.[chKey];
+  const name = CH_LABELS[chKey];
+
+  // Data quality
+  if (ch.spend === 0) {
+    F.alerts.push({title:`${name} — $0 spend recorded`, desc:'No spend data from Windsor.ai.', action:'Verify campaign status and connector sync.'});
+  }
+  if (ch.spend > 200 && ch.demos === 0 && chKey !== 'linkedin' && chKey !== 'youtube') {
+    F.alerts.push({title:`${name} — spend recorded, 0 Windsor demos`, desc:`${fmt$(ch.spend)} spent with no attributed conversions.`, action:'Check conversion tracking setup in Windsor.ai.'});
+  }
+
+  // CPD
+  const cpd = ch.demos > 0 ? ch.spend / ch.demos : null;
+  const pCpd = pch.demos > 0 ? pch.spend / pch.demos : null;
+  if (cpd !== null && cpd > 500 && chKey !== 'linkedin') {
+    F.alerts.push({title:`High CPD — ${fmt$(cpd)}/demo`, desc:'Above $500 direct-response threshold.', action:'Review targeting and creative mix.'});
+  }
+  if (cpd !== null && pCpd !== null) {
+    const d = ((cpd - pCpd) / pCpd) * 100;
+    if (d > 25) F.weaknesses.push({title:`CPD Spike — ${fmt$(pCpd)} → ${fmt$(cpd)}`, desc:`${d.toFixed(1)}% increase vs prior period.`, action:'Investigate creative fatigue or audience saturation.'});
+    else if (d < -20) F.wins.push({title:`CPD Improving — ${fmt$(pCpd)} → ${fmt$(cpd)}`, desc:`${Math.abs(d).toFixed(1)}% more efficient.`, action:''});
+  }
+
+  // CTR
+  const ctr = ch.ctrAvg;
+  const pCtr = pch.ctrAvg;
+  if (ctr !== null && pCtr !== null) {
+    const d = ((ctr - pCtr) / Math.abs(pCtr)) * 100;
+    if (d < -20) F.weaknesses.push({title:`CTR Declining — ${fmtPct(pCtr)} → ${fmtPct(ctr)}`, desc:'Creative may be fatiguing.', action:'Refresh top-spend creatives. Test new hook angles.'});
+    else if (d > 20) F.wins.push({title:`CTR Improving — ${fmtPct(pCtr)} → ${fmtPct(ctr)}`, desc:'Creative resonance increasing.', action:''});
+  }
+
+  // Demo quality from attribution
+  if (attr.demos > 0) {
+    const qualRate = (attr.qualified / attr.demos) * 100;
+    const nqRate = (attr.notQualified / attr.demos) * 100;
+    const teRate = (attr.tooEarly / attr.demos) * 100;
+
+    if (qualRate > 50) F.wins.push({title:`Strong Qualification Rate — ${qualRate.toFixed(1)}%`, desc:`${attr.qualified}/${attr.demos} demos are qualified.`, action:''});
+    if (nqRate > 30) F.weaknesses.push({title:`High Not-Qualified Rate — ${nqRate.toFixed(1)}%`, desc:`${attr.notQualified}/${attr.demos} demos not qualified.`, action:'Review targeting. Check if messaging attracts wrong audience.'});
+    if (teRate > 20) F.opportunities.push({title:`Nurture Pipeline — ${attr.tooEarly} "Too Early" demos`, desc:`${teRate.toFixed(1)}% of demos need more time.`, action:'Add to 30/60/90-day nurture sequence.'});
+  }
+
+  // Creative concentration
+  const creatives = windsor.creatives[chKey];
+  const crEntries = Object.entries(creatives).sort((a,b) => b[1].spend - a[1].spend);
+  if (crEntries.length >= 3) {
+    const topSpend = crEntries[0][1].spend;
+    const totalSpend = ch.spend;
+    if (totalSpend > 0 && (topSpend / totalSpend) > 0.5) {
+      F.weaknesses.push({title:`Creative Concentration — "${crEntries[0][0]}" is ${((topSpend/totalSpend)*100).toFixed(0)}% of spend`, desc:'Single creative dependency risk.', action:'Diversify creative mix to reduce fatigue risk.'});
+    }
+  }
+
+  // Top creative by qualification rate
+  const crAttr = hubspot.attribution.byCreative[chKey];
+  const crQual = Object.entries(crAttr)
+    .filter(([_,v]) => v.demos >= 3)
+    .map(([name,v]) => ({name, ...v, qualRate: v.qualified / v.demos}))
+    .sort((a,b) => b.qualRate - a.qualRate);
+  if (crQual.length > 0) {
+    const best = crQual[0];
+    if (best.qualRate > 0.5) F.wins.push({title:`Top Creative — "${best.name}" at ${(best.qualRate*100).toFixed(0)}% qualified`, desc:`${best.qualified}/${best.demos} demos qualified.`, action:'Consider increasing budget allocation to this creative.'});
+    const worst = crQual[crQual.length - 1];
+    if (worst.qualRate < 0.2 && worst.demos >= 3) F.alerts.push({title:`Underperforming Creative — "${worst.name}" at ${(worst.qualRate*100).toFixed(0)}% qualified`, desc:`${worst.qualified}/${worst.demos} demos qualified. Mostly driving unqualified pipeline.`, action:'Consider pausing or significantly revising this creative.'});
+  }
+
+  return F;
+}
+
+// ── Cross-channel intelligence (Overview) ────────────────────────────────────
+function buildOverviewIntelligence(windsor, prevWindsor, hubspot, prevHubspot) {
+  const F = {alerts:[],weaknesses:[],opportunities:[],wins:[]};
+
+  // Channel comparison
+  const chData = CH_KEYS.map(k => ({
+    key: k, name: CH_LABELS[k],
+    spend: windsor.channels[k].spend,
+    demos: hubspot.attribution.byChannel[k].demos,
+    qualified: hubspot.attribution.byChannel[k].qualified,
+    cpd: hubspot.attribution.byChannel[k].demos > 0 ? windsor.channels[k].spend / hubspot.attribution.byChannel[k].demos : null,
+    cpqd: hubspot.attribution.byChannel[k].qualified > 0 ? windsor.channels[k].spend / hubspot.attribution.byChannel[k].qualified : null,
+  })).filter(c => c.spend > 0);
+
+  // CPD efficiency gap
+  const withCpqd = chData.filter(c => c.cpqd !== null);
+  if (withCpqd.length >= 2) {
+    const best = withCpqd.reduce((a,b) => a.cpqd < b.cpqd ? a : b);
+    const worst = withCpqd.reduce((a,b) => a.cpqd > b.cpqd ? a : b);
+    const gap = ((worst.cpqd - best.cpqd) / best.cpqd) * 100;
+    if (gap > 50) {
+      F.opportunities.push({
+        title:`CPQD Gap — ${best.name} is ${gap.toFixed(0)}% cheaper than ${worst.name}`,
+        desc:`${best.name} ${fmt$(best.cpqd)}/qualified demo vs ${worst.name} ${fmt$(worst.cpqd)}/qualified demo.`,
+        action:`Consider shifting budget from ${worst.name} to ${best.name} for better qualified pipeline efficiency.`
+      });
+    }
+  }
+
+  // Spend concentration
+  const totalSpend = chData.reduce((s,c) => s + c.spend, 0);
+  chData.forEach(c => {
+    const pct = (c.spend / totalSpend) * 100;
+    if (pct > 60) F.weaknesses.push({title:`Channel Concentration — ${c.name} is ${pct.toFixed(0)}% of budget`, desc:`${fmt$(c.spend)} of ${fmt$(totalSpend)} total.`, action:'Single-channel dependency. Diversify spend.'});
+  });
+
+  // Overall qualification rate
+  const totalDemos = chData.reduce((s,c) => s + c.demos, 0);
+  const totalQual = chData.reduce((s,c) => s + c.qualified, 0);
+  if (totalDemos > 0) {
+    const qualRate = (totalQual / totalDemos) * 100;
+    if (qualRate > 50) F.wins.push({title:`Strong Overall Qualification — ${qualRate.toFixed(1)}%`, desc:`${totalQual}/${totalDemos} attributed demos are qualified.`, action:''});
+    else if (qualRate < 30) F.alerts.push({title:`Low Overall Qualification — ${qualRate.toFixed(1)}%`, desc:`Only ${totalQual}/${totalDemos} attributed demos are qualified.`, action:'Review targeting across all channels. Check ICP alignment.'});
+  }
+
+  return F;
+}
+
+// ── Render intelligence report HTML ──────────────────────────────────────────
+function renderIntel(F) {
+  const cats = [
+    {key:'alerts', label:'Alerts', cls:'intel-alert'},
+    {key:'weaknesses', label:'Weaknesses', cls:'intel-weakness'},
+    {key:'opportunities', label:'Opportunities', cls:'intel-opportunity'},
+    {key:'wins', label:'Wins', cls:'intel-win'},
+  ];
+  let html = '<div class="intel-section">';
+  for (const cat of cats) {
+    if (F[cat.key].length === 0) continue;
+    html += `<div class="intel-cat ${cat.cls}">`;
+    html += `<div class="intel-cat-title">${cat.label} (${F[cat.key].length})</div>`;
+    for (const item of F[cat.key]) {
+      html += `<div class="intel-item">`;
+      html += `<div class="intel-item-title">${item.title}</div>`;
+      html += `<div class="intel-item-desc">${item.desc}</div>`;
+      if (item.action) html += `<div class="intel-item-action">\u2192 ${item.action}</div>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  if (F.alerts.length + F.weaknesses.length + F.opportunities.length + F.wins.length === 0) {
+    html += '<div class="intel-item"><div class="intel-item-desc" style="color:#8a9aaa;font-style:italic;">Insufficient data for intelligence analysis in this window.</div></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ── Build Creative → Demo Quality Matrix ─────────────────────────────────────
+function buildCreativeQualityMatrix(chKey, windsor, hubspot) {
+  const crAttr = hubspot.attribution.byCreative[chKey];
+  const windsorCr = windsor.creatives[chKey];
+  const entries = Object.entries(crAttr)
+    .filter(([_,v]) => v.demos > 0)
+    .sort((a,b) => b[1].demos - a[1].demos);
+
+  if (entries.length === 0) return '<div style="color:#8a9aaa;font-style:italic;padding:12px;">No creative-level attribution data for this channel and time window.</div>';
+
+  let html = '<div class="cq-grid">';
+  for (const [name, cr] of entries) {
+    const total = cr.demos;
+    const qualPct = (cr.qualified / total * 100).toFixed(0);
+    const nqPct = (cr.notQualified / total * 100).toFixed(0);
+    const tePct = (cr.tooEarly / total * 100).toFixed(0);
+    const otherPct = Math.max(0, 100 - qualPct - nqPct - tePct);
+    const wCr = windsorCr[name];
+    const spendStr = wCr ? fmt$(wCr.spend) : '—';
+    const campStr = cr.campaigns?.length > 0 ? cr.campaigns[0] : '—';
+
+    html += `<div class="cq-card">`;
+    html += `<div class="cq-name" title="${name}">${name}</div>`;
+    html += `<div class="cq-camp" title="${campStr}">${campStr}</div>`;
+    html += `<div class="cq-bar-wrap">`;
+    if (cr.qualified > 0) html += `<div class="cq-bar cq-bar-qual" style="width:${qualPct}%">${cr.qualified}</div>`;
+    if (cr.notQualified > 0) html += `<div class="cq-bar cq-bar-nq" style="width:${nqPct}%">${cr.notQualified}</div>`;
+    if (cr.tooEarly > 0) html += `<div class="cq-bar cq-bar-te" style="width:${tePct}%">${cr.tooEarly}</div>`;
+    if (otherPct > 0) html += `<div class="cq-bar cq-bar-other" style="width:${otherPct}%"></div>`;
+    html += `</div>`;
+    html += `<div class="cq-legend">`;
+    html += `<span><span class="dot" style="background:#2E7D52"></span>Qual ${cr.qualified}</span>`;
+    html += `<span><span class="dot" style="background:#C0392B"></span>Not Qual ${cr.notQualified}</span>`;
+    html += `<span><span class="dot" style="background:#E65100"></span>Too Early ${cr.tooEarly}</span>`;
+    html += `</div>`;
+    html += `<div class="cq-spend">Spend: ${spendStr} · ${total} demo${total !== 1 ? 's' : ''}</div>`;
+    html += `</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ── Build Campaign Table ─────────────────────────────────────────────────────
+function buildCampaignTable(chKey, windsor, prevWindsor, hubspot) {
+  const camps = Object.entries(windsor.campaigns[chKey])
+    .sort((a,b) => b[1].spend - a[1].spend);
+  if (camps.length === 0) return '<div style="color:#8a9aaa;font-style:italic;padding:12px;">No campaign data.</div>';
+
+  const campAttr = hubspot.attribution.byCampaign[chKey];
+  const pCamps = prevWindsor.campaigns[chKey];
+
+  let html = '<table class="data-table"><thead><tr>';
+  html += '<th>Campaign</th><th>Spend</th><th>Clicks</th><th>CTR</th><th>Demos (W)</th><th>Demos (HS)</th><th>Qualified</th><th>Not Qual</th><th>Too Early</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const [name, c] of camps.slice(0, 15)) {
+    const ctr = c.ctrAvg !== null ? (c.ctrAvg * 100).toFixed(2) + '%' : '—';
+    const hsC = campAttr[name] || {demos:0,qualified:0,notQualified:0,tooEarly:0};
+    const qPct = hsC.demos > 0 ? ` (${(hsC.qualified/hsC.demos*100).toFixed(0)}%)` : '';
+    html += `<tr>`;
+    html += `<td style="font-weight:400;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${name}">${name}</td>`;
+    html += `<td>${fmt$(c.spend)}</td>`;
+    html += `<td>${fmtN(c.clicks)}</td>`;
+    html += `<td>${ctr}</td>`;
+    html += `<td>${Math.round(c.demos)}</td>`;
+    html += `<td>${hsC.demos}</td>`;
+    html += `<td style="color:#2E7D52">${hsC.qualified}${qPct}</td>`;
+    html += `<td style="color:#C0392B">${hsC.notQualified}</td>`;
+    html += `<td style="color:#E65100">${hsC.tooEarly}</td>`;
+    html += `</tr>`;
+  }
+  if (camps.length > 15) html += `<tr><td colspan="9" style="color:#8a9aaa;font-style:italic;text-align:center;">+ ${camps.length - 15} more campaigns</td></tr>`;
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── Build Creative Table ─────────────────────────────────────────────────────
+function buildCreativeTable(chKey, windsor, hubspot) {
+  const crs = Object.entries(windsor.creatives[chKey])
+    .sort((a,b) => b[1].spend - a[1].spend);
+  if (crs.length === 0) return '<div style="color:#8a9aaa;font-style:italic;padding:12px;">No creative-level data.</div>';
+
+  const crAttr = hubspot.attribution.byCreative[chKey];
+
+  let html = '<table class="data-table"><thead><tr>';
+  html += '<th>Ad Creative</th><th>Spend</th><th>Clicks</th><th>CTR</th><th>Demos (W)</th><th>Demos (HS)</th><th>Qualified</th><th>Not Qual</th><th>Too Early</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const [name, c] of crs.slice(0, 20)) {
+    const ctr = c.ctrAvg !== null ? (c.ctrAvg * 100).toFixed(2) + '%' : '—';
+    const hsC = crAttr[name] || {demos:0,qualified:0,notQualified:0,tooEarly:0};
+    html += `<tr>`;
+    html += `<td style="font-weight:400;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${name}">${name}</td>`;
+    html += `<td>${fmt$(c.spend)}</td>`;
+    html += `<td>${fmtN(c.clicks)}</td>`;
+    html += `<td>${ctr}</td>`;
+    html += `<td>${Math.round(c.demos)}</td>`;
+    html += `<td>${hsC.demos}</td>`;
+    html += `<td style="color:#2E7D52">${hsC.qualified}</td>`;
+    html += `<td style="color:#C0392B">${hsC.notQualified}</td>`;
+    html += `<td style="color:#E65100">${hsC.tooEarly}</td>`;
+    html += `</tr>`;
+  }
+  if (crs.length > 20) html += `<tr><td colspan="9" style="color:#8a9aaa;font-style:italic;text-align:center;">+ ${crs.length - 20} more creatives</td></tr>`;
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── Build Channel Tab (single window view) ───────────────────────────────────
+function buildChannelWindow(chKey, winKey, data) {
+  const w = data.windsor;
+  const pw = data.prevWindsor;
+  const h = data.hubspot;
+  const ph = data.prevHubspot;
+  const ch = w.channels[chKey];
+  const pch = pw.channels[chKey];
+  const attr = h.attribution.byChannel[chKey];
+  const pAttr = ph?.attribution?.byChannel?.[chKey];
+  const noPrev = winKey === 'ytd';
+  const db = noPrev ? () => '' : (c,p,opts) => deltaBadge(c,p,opts);
+  const sd = noPrev ? () => '' : (c,p,opts) => scDelta(c,p,opts);
+  const name = CH_LABELS[chKey];
+
+  // Compute KPIs
+  const cpd = ch.demos > 0 ? ch.spend / ch.demos : null;
+  const pCpd = pch.demos > 0 ? pch.spend / pch.demos : null;
+  const cpqd = attr.qualified > 0 ? ch.spend / attr.qualified : null;
+  const pCpqd = pAttr?.qualified > 0 ? pch.spend / pAttr.qualified : null;
+  const qualPct = attr.demos > 0 ? (attr.qualified / attr.demos * 100) : null;
+  const pQualPct = pAttr?.demos > 0 ? (pAttr.qualified / pAttr.demos * 100) : null;
+  const ctr = ch.ctrAvg;
+  const pCtr = pch.ctrAvg;
+
+  let html = '';
+
+  // KPI cards
+  html += '<div class="sl">Key Performance Indicators</div>';
+  html += '<div class="stat-row">';
+  html += `<div class="stat-card"><div class="sc-label">Spend</div><div class="sc-value">${fmt$(ch.spend)}</div><div class="sc-sub">Budget consumed</div>${sd(ch.spend,pch.spend)}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Demos (HubSpot)</div><div class="sc-value">${attr.demos}</div><div class="sc-sub">Attributed from UTMs</div>${sd(attr.demos,pAttr?.demos||0)}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Cost Per Demo</div><div class="sc-value">${cpd !== null ? fmt$(cpd) : '\u2014'}</div><div class="sc-sub">Windsor demos</div>${cpd!==null&&pCpd!==null?sd(cpd,pCpd,{invert:true}):''}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Cost Per Qual Demo</div><div class="sc-value">${cpqd !== null ? fmt$(cpqd) : '\u2014'}</div><div class="sc-sub">${attr.qualified} qualified</div>${cpqd!==null&&pCpqd!==null?sd(cpqd,pCpqd,{invert:true}):''}</div>`;
+  html += '</div>';
+
+  html += '<div class="kpi-grid">';
+  html += `<div class="kpi ${qualPct!==null&&qualPct>50?'kpi-good':qualPct!==null&&qualPct<30?'kpi-danger':''}"><div class="kpi-label">Qualified %</div><div class="kpi-value">${qualPct!==null?qualPct.toFixed(1)+'%':'\u2014'}</div><div class="kpi-sub">${attr.qualified} of ${attr.demos} demos</div>${qualPct!==null&&pQualPct!==null?db(qualPct,pQualPct):''}</div>`;
+  html += `<div class="kpi"><div class="kpi-label">CTR</div><div class="kpi-value">${ctr!==null?fmtPct(ctr):'\u2014'}</div><div class="kpi-sub">Average across ads</div>${ctr!==null&&pCtr!==null?db(ctr,pCtr):''}</div>`;
+  html += `<div class="kpi"><div class="kpi-label">Impressions</div><div class="kpi-value">${fmtN(ch.impressions)}</div>${db(ch.impressions,pch.impressions)}</div>`;
+  html += `<div class="kpi"><div class="kpi-label">Clicks</div><div class="kpi-value">${fmtN(ch.clicks)}</div>${db(ch.clicks,pch.clicks)}</div>`;
+  html += `<div class="kpi kpi-navy"><div class="kpi-label">Not Qualified</div><div class="kpi-value">${attr.notQualified}</div><div class="kpi-sub">${attr.demos>0?((attr.notQualified/attr.demos)*100).toFixed(1)+'%':'\u2014'} of demos</div></div>`;
+  html += `<div class="kpi kpi-warn"><div class="kpi-label">Too Early</div><div class="kpi-value">${attr.tooEarly}</div><div class="kpi-sub">Warm pipeline</div></div>`;
+  html += '</div>';
+
+  // Budget pacing (MTD and Last Month only)
+  if (winKey === 'mtd' || winKey === 'lastmonth') {
+    const budget = data.budgets[chKey] || 0;
+    if (budget > 0) {
+      const pct = Math.min((ch.spend / budget) * 100, 120);
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dayOfMonth = now.getDate() - 1;
+      const pacingPct = winKey === 'lastmonth' ? 100 : Math.min((dayOfMonth / daysInMonth) * 100, 100);
+      const color = pct > 105 ? '#C0392B' : pct > 95 ? '#B8860B' : '#72A4BF';
+      const label = pct > 105 ? 'Over budget' : pct > 95 ? 'On pace' : 'Under-pacing';
+      html += `<div class="chart-card full" style="margin-bottom:32px"><div class="chart-title">Budget Pacing</div>`;
+      html += `<div class="pacing-bar-wrap"><div class="pacing-bar-track"><div class="pacing-bar-fill" style="width:${Math.min(pct,100).toFixed(1)}%;background:${color}"></div><div class="pacing-bar-marker" style="left:${pacingPct.toFixed(1)}%"></div></div>`;
+      html += `<div class="pacing-bar-labels"><span>${label} — ${fmt$(ch.spend)} / ${fmt$(budget)}</span><span>${pct.toFixed(0)}% of budget</span></div></div></div>`;
+    }
+  }
+
+  // Campaign Analysis
+  html += '<div class="sl">Campaign Analysis</div>';
+  html += '<div class="chart-card full" style="margin-bottom:32px">';
+  html += `<div class="chart-title">Campaigns by Spend <span class="chart-title-meta">${Object.keys(w.campaigns[chKey]).length} total</span></div>`;
+  html += buildCampaignTable(chKey, w, pw, h);
+  html += '</div>';
+
+  // Creative Analysis
+  html += '<div class="sl">Ad Creative Analysis</div>';
+  html += '<div class="chart-card full" style="margin-bottom:32px">';
+  html += `<div class="chart-title">Creatives by Spend <span class="chart-title-meta">${Object.keys(w.creatives[chKey]).length} total</span></div>`;
+  html += buildCreativeTable(chKey, w, h);
+  html += '</div>';
+
+  // Creative → Demo Quality Matrix
+  html += '<div class="sl">Creative \u2192 Demo Quality</div>';
+  html += buildCreativeQualityMatrix(chKey, w, h);
+
+  // Intelligence
+  html += '<div class="sl">Intelligence Report</div>';
+  const intel = buildChannelIntelligence(chKey, w, pw, h, ph);
+  html += renderIntel(intel);
+
+  return html;
+}
+
+// ── Build Overview Tab (single window view) ──────────────────────────────────
+function buildOverviewWindow(winKey, data) {
+  const w = data.windsor;
+  const pw = data.prevWindsor;
+  const h = data.hubspot;
+  const ph = data.prevHubspot;
+  const noPrev = winKey === 'ytd';
+  const db = noPrev ? () => '' : (c,p,opts) => deltaBadge(c,p,opts);
+  const sd = noPrev ? () => '' : (c,p,opts) => scDelta(c,p,opts);
+
+  // Blended KPIs
+  let totalSpend = 0, pTotalSpend = 0, totalDemos = 0, pTotalDemos = 0;
+  let totalQual = 0, pTotalQual = 0, totalNQ = 0, totalTE = 0;
+  CH_KEYS.forEach(k => {
+    totalSpend += w.channels[k].spend;
+    pTotalSpend += pw.channels[k].spend;
+    totalDemos += h.attribution.byChannel[k].demos;
+    pTotalDemos += (ph?.attribution?.byChannel?.[k]?.demos || 0);
+    totalQual += h.attribution.byChannel[k].qualified;
+    pTotalQual += (ph?.attribution?.byChannel?.[k]?.qualified || 0);
+    totalNQ += h.attribution.byChannel[k].notQualified;
+    totalTE += h.attribution.byChannel[k].tooEarly;
+  });
+  const blendedCPD = totalDemos > 0 ? totalSpend / totalDemos : null;
+  const pBlendedCPD = pTotalDemos > 0 ? pTotalSpend / pTotalDemos : null;
+  const blendedCPQD = totalQual > 0 ? totalSpend / totalQual : null;
+  const pBlendedCPQD = pTotalQual > 0 ? pTotalSpend / pTotalQual : null;
+  const qualPct = totalDemos > 0 ? (totalQual / totalDemos * 100) : null;
+  const pQualPct = pTotalDemos > 0 ? (pTotalQual / pTotalDemos * 100) : null;
+
+  let html = '';
+
+  // Blended KPIs
+  html += '<div class="sl">Blended KPIs — All Channels</div>';
+  html += '<div class="stat-row">';
+  html += `<div class="stat-card"><div class="sc-label">Total Spend</div><div class="sc-value">${fmt$(totalSpend)}</div><div class="sc-sub">All 5 channels</div>${sd(totalSpend,pTotalSpend)}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Total Demos</div><div class="sc-value">${totalDemos}</div><div class="sc-sub">HubSpot attributed</div>${sd(totalDemos,pTotalDemos)}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Blended CPD</div><div class="sc-value">${blendedCPD!==null?fmt$(blendedCPD):'\u2014'}</div>${blendedCPD!==null&&pBlendedCPD!==null?sd(blendedCPD,pBlendedCPD,{invert:true}):''}</div>`;
+  html += `<div class="stat-card"><div class="sc-label">Cost Per Qual Demo</div><div class="sc-value">${blendedCPQD!==null?fmt$(blendedCPQD):'\u2014'}</div><div class="sc-sub">${totalQual} qualified</div>${blendedCPQD!==null&&pBlendedCPQD!==null?sd(blendedCPQD,pBlendedCPQD,{invert:true}):''}</div>`;
+  html += '</div>';
+
+  html += '<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">';
+  html += `<div class="kpi ${qualPct!==null&&qualPct>50?'kpi-good':''}"><div class="kpi-label">Qualification Rate</div><div class="kpi-value">${qualPct!==null?qualPct.toFixed(1)+'%':'\u2014'}</div><div class="kpi-sub">${totalQual} of ${totalDemos}</div>${qualPct!==null&&pQualPct!==null?db(qualPct,pQualPct):''}</div>`;
+  html += `<div class="kpi"><div class="kpi-label">Not Qualified</div><div class="kpi-value">${totalNQ}</div></div>`;
+  html += `<div class="kpi kpi-warn"><div class="kpi-label">Too Early</div><div class="kpi-value">${totalTE}</div><div class="kpi-sub">Nurture pipeline</div></div>`;
+  html += `<div class="kpi kpi-navy"><div class="kpi-label">New MRR</div><div class="kpi-value">${fmt$(h.newMRR)}</div><div class="kpi-sub">${h.closedDeals} deals closed</div></div>`;
+  html += '</div>';
+
+  // Channel comparison cards
+  html += '<div class="sl">Channel Comparison</div>';
+  html += '<div class="ch-grid">';
+  CH_KEYS.forEach(k => {
+    const ch = w.channels[k];
+    const pch = pw.channels[k];
+    const attr = h.attribution.byChannel[k];
+    const cpd = attr.demos > 0 ? ch.spend / attr.demos : null;
+    const cpqd = attr.qualified > 0 ? ch.spend / attr.qualified : null;
+    const qPct = attr.demos > 0 ? (attr.qualified / attr.demos * 100).toFixed(0) + '%' : '\u2014';
+    html += `<div class="ch-card" onclick="switchToChannel('${k}')">`;
+    html += `<div class="ch-card-header"><span class="ch-card-icon">${CH_ICONS[k]}</span><span class="ch-card-name">${CH_LABELS[k]}</span></div>`;
+    html += `<div class="ch-card-spend">${fmt$(ch.spend)}</div>`;
+    html += `<div class="ch-card-rows">`;
+    html += `<div class="ch-card-row"><span class="ch-card-row-label">Demos</span><span class="ch-card-row-val">${attr.demos}</span></div>`;
+    html += `<div class="ch-card-row"><span class="ch-card-row-label">CPD</span><span class="ch-card-row-val">${cpd!==null?fmt$(cpd):'\u2014'}</span></div>`;
+    html += `<div class="ch-card-row"><span class="ch-card-row-label">CPQD</span><span class="ch-card-row-val">${cpqd!==null?fmt$(cpqd):'\u2014'}</span></div>`;
+    html += `<div class="ch-card-row"><span class="ch-card-row-label">Qual %</span><span class="ch-card-row-val">${qPct}</span></div>`;
+    html += `</div></div>`;
+  });
+  html += '</div>';
+
+  // Cross-channel insights & intelligence
+  html += '<div class="sl">Cross-Channel Intelligence</div>';
+  const intel = buildOverviewIntelligence(w, pw, h, ph);
+  html += renderIntel(intel);
+
+  return html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════════════════════
+function render() {
+  const data = RAW;
+  document.getElementById('gen-time').textContent = data.generatedAt || '';
+
+  // Build main tabs
+  const allTabs = [{key:'overview',label:'Overview',icon:'\ud83c\udf10'}, ...CH_KEYS.map(k=>({key:k,label:CH_LABELS[k],icon:CH_ICONS[k]}))];
+  const tabsEl = document.getElementById('main-tabs');
+  tabsEl.innerHTML = allTabs.map((t,i) =>
+    `<button class="tab ${i===0?'active':''}" data-tab="${t.key}"><span class="tab-icon">${t.icon}</span> ${t.label}</button>`
+  ).join('');
+
+  const panelsEl = document.getElementById('panels');
+  let panelsHTML = '';
+
+  // Build each main tab panel
+  for (const tab of allTabs) {
+    panelsHTML += `<div class="panel ${tab.key === 'overview' ? 'active' : ''}" id="panel-${tab.key}">`;
+
+    // Sub-tabs (time windows)
+    panelsHTML += '<div class="sub-tabs">';
+    WIN_KEYS.forEach((wk,i) => {
+      const wData = data.windows[wk];
+      panelsHTML += `<button class="sub-tab ${i===0?'active':''}" data-subtab="${tab.key}-${wk}">${WIN_LABELS[wk]}</button>`;
+    });
+    panelsHTML += '</div>';
+
+    // Sub-panels (one per time window)
+    WIN_KEYS.forEach((wk,i) => {
+      const wData = data.windows[wk];
+      panelsHTML += `<div class="sub-panel ${i===0?'active':''}" id="subpanel-${tab.key}-${wk}">`;
+      panelsHTML += `<div style="font-size:12px;color:#8a9aaa;margin-bottom:20px;font-style:italic;">${wData.label}${wData.prevLabel && wk !== 'ytd' ? ' — vs ' + wData.prevLabel : ''}</div>`;
+
+      if (tab.key === 'overview') {
+        panelsHTML += buildOverviewWindow(wk, wData);
+      } else {
+        panelsHTML += buildChannelWindow(tab.key, wk, wData);
+      }
+      panelsHTML += '</div>';
+    });
+
+    panelsHTML += '</div>';
+  }
+
+  panelsEl.innerHTML = panelsHTML;
+
+  // Tab switching
+  tabsEl.addEventListener('click', e => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+
+  // Sub-tab switching
+  panelsEl.addEventListener('click', e => {
+    const btn = e.target.closest('.sub-tab');
+    if (!btn) return;
+    const [tabKey, winKey] = btn.dataset.subtab.split('-');
+    const panel = document.getElementById('panel-' + tabKey);
+    panel.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    panel.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
+  });
+}
+
+// Navigate to a channel tab (from overview card click)
+function switchToChannel(chKey) {
+  const tab = document.querySelector(`.tab[data-tab="${chKey}"]`);
+  if (tab) tab.click();
+}
+
+// Boot
+render();
+</script>
+</body>
+</html>
