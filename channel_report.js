@@ -154,18 +154,10 @@ async function fetchWindsorAds(dateFrom, dateTo) {
     'all_conversions'
   ].join(',');
 
-  // Day-by-day fetch in batches of 5 (fixes TikTok row collapse)
-  const days = [];
-  for (let d = new Date(dateFrom); d <= new Date(dateTo); d.setDate(d.getDate() + 1)) {
-    days.push(d.toISOString().slice(0, 10));
-  }
-  const allRows = [];
-  for (let i = 0; i < days.length; i += 5) {
-    const batch = days.slice(i, i + 5);
-    const batchResults = await Promise.all(batch.map(day => windsorFetch(day, day, fields)));
-    allRows.push(...batchResults.flat());
-    if (i + 5 < days.length) await sleep(300);
-  }
+  // Bulk fetch (single API call) — fast and works for all channels
+  // The 'date' field in the request gives us per-day rows in the response
+  console.log(`    Windsor bulk fetch: ${dateFrom} → ${dateTo}`);
+  const allRows = await windsorFetch(dateFrom, dateTo, fields);
 
   const result = emptyResult();
 
@@ -234,13 +226,7 @@ async function fetchWindsorAds(dateFrom, dateTo) {
 
   // LinkedIn demos override: filter to only "demo request" conversions
   const liFields = 'date,datasource,conversion_name,externalwebsiteconversions';
-  const liRows = [];
-  for (let i = 0; i < days.length; i += 5) {
-    const batch = days.slice(i, i + 5);
-    const batchResults = await Promise.all(batch.map(day => windsorFetch(day, day, liFields)));
-    liRows.push(...batchResults.flat());
-    if (i + 5 < days.length) await sleep(300);
-  }
+  const liRows = await windsorFetch(dateFrom, dateTo, liFields);
   let liDemosFiltered = 0;
   for (const row of liRows) {
     if (!/linkedin/.test((row.datasource || '').toLowerCase())) continue;
@@ -705,19 +691,24 @@ async function main() {
 
   const winKeys = Object.keys(windows);
 
-  // ── 1. Windsor: campaign + creative level data for all windows ──
-  console.log('\u2500\u2500 Windsor: fetching campaign + creative data...');
+  // ── 1. Windsor: campaign + creative level data for all windows (parallel) ──
+  console.log('\u2500\u2500 Windsor: fetching campaign + creative data (parallel)...');
   const windsorByWindow = {};
   const prevWindsorByWindow = {};
-  for (const key of winKeys) {
-    console.log(`\n  \u250c\u2500 ${key}: ${windows[key].from} \u2192 ${windows[key].to}`);
-    windsorByWindow[key] = await fetchWindsorAds(windows[key].from, windows[key].to);
 
-    console.log(`  \u2514\u2500 prev ${key}: ${prevWindows[key].from} \u2192 ${prevWindows[key].to}`);
-    prevWindsorByWindow[key] = await fetchWindsorAds(prevWindows[key].from, prevWindows[key].to);
-  }
+  // Fire all Windsor fetches in parallel (2 API calls per window = 20 total, all at once)
+  const windsorPromises = winKeys.map(async key => {
+    const [curr, prev] = await Promise.all([
+      fetchWindsorAds(windows[key].from, windows[key].to),
+      fetchWindsorAds(prevWindows[key].from, prevWindows[key].to),
+    ]);
+    windsorByWindow[key] = curr;
+    prevWindsorByWindow[key] = prev;
+    console.log(`  \u2713 ${key} done`);
+  });
+  await Promise.all(windsorPromises);
 
-  // ── 2. HubSpot: deals with UTM attribution ──
+  // ── 2. HubSpot: deals with UTM attribution (sequential to avoid rate limits) ──
   console.log('\n\u2500\u2500 HubSpot: fetching deals with UTM attribution...');
   const hubspotData     = await fetchHubSpotAttribution(windows);
   const prevHubspotData = await fetchHubSpotAttribution(prevWindows);
